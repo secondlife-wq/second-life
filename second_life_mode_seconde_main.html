@@ -1,0 +1,1404 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Second Life — Mode Seconde Main</title>
+    <!-- Supabase JS v2 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter & Newsreader Fonts for a crisp editorial look -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Newsreader', 'serif'],
+                    },
+                    colors: {
+                        stone: {
+                            50: '#FAF9F6',
+                            100: '#F3F1EC',
+                            200: '#E5E1D8',
+                            800: '#292724',
+                            900: '#181715',
+                        },
+                        forest: {
+                            700: '#1B4332',
+                            800: '#143326',
+                            900: '#0D2219',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #FAF9F6;
+            color: #181715;
+            font-family: 'Inter', sans-serif;
+        }
+        .editorial-title {
+            font-family: 'Newsreader', serif;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-forest-800 selection:text-white">
+
+    <!-- Toast Notification Banner -->
+    <div id="toast-banner" class="fixed bottom-5 right-5 z-50 transform translate-y-24 opacity-0 transition-all duration-300 bg-stone-900 text-white px-4 py-3 rounded-lg shadow-lg border border-stone-700 flex items-center gap-3 text-sm">
+        <i id="toast-icon" class="fa-solid fa-check text-emerald-400"></i>
+        <span id="toast-text">Action effectuée</span>
+    </div>
+
+    <!-- Top Utility Bar -->
+    <div class="bg-stone-900 text-stone-200 text-xs py-2 px-4 border-b border-stone-800">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-4">
+                <span>Livraison partout en Tunisie • Paiement sécurisé P2P</span>
+                <span class="hidden sm:inline text-stone-500">|</span>
+                <a href="https://www.instagram.com/second__life_111" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 text-white hover:underline font-medium">
+                    <i class="fa-brands fa-instagram text-sm"></i> @second__life_111
+                </a>
+            </div>
+            <div class="flex items-center gap-4">
+                <!-- Supabase Sync Status Pill -->
+                <button onclick="navigate('admin')" class="inline-flex items-center gap-1.5 text-stone-300 hover:text-white cursor-pointer" title="Configurer Supabase dans l'espace Admin">
+                    <span id="supabase-status-dot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span id="supabase-status-label">Mode Local (Supabase prêt)</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Sticky Header -->
+    <header class="sticky top-0 z-40 bg-white border-b border-stone-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between gap-4">
+            
+            <!-- Brand & Default / Custom Logo Upload Area -->
+            <div class="flex items-center gap-3 shrink-0">
+                <div onclick="document.getElementById('brand-logo-input').click()" class="relative group w-12 h-12 rounded-full border border-[#6E8262]/40 bg-[#738666] flex items-center justify-center cursor-pointer overflow-hidden shadow-2xs" title="Logo Second Life (cliquez pour modifier)">
+                    <svg id="brand-logo-svg" viewBox="0 0 200 200" class="w-full h-full object-cover" aria-label="Logo Second Life">
+                        <circle cx="100" cy="100" r="98" fill="#738666" />
+                        <path d="M 100 24 A 76 76 0 0 1 174.5 85" fill="none" stroke="#F4F3EB" stroke-width="5.5" stroke-linecap="round" />
+                        <polyline points="166,82 175,87 180,77" fill="none" stroke="#F4F3EB" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M 173 118 A 76 76 0 0 1 42 152" fill="none" stroke="#F4F3EB" stroke-width="5.5" stroke-linecap="round" />
+                        <polyline points="38,141 41,153 53,150" fill="none" stroke="#F4F3EB" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <path d="M 27 120 A 76 76 0 0 1 82 26" fill="none" stroke="#F4F3EB" stroke-width="5.5" stroke-linecap="round" />
+                        <g fill="#F4F3EB">
+                            <path d="M 100 66 C 92 54, 78 50, 72 52 C 74 64, 86 70, 99 68 Z" />
+                            <path d="M 101 66 C 109 54, 123 50, 129 52 C 127 64, 115 70, 102 68 Z" />
+                            <rect x="98.5" y="64" width="3" height="12" rx="1.5" />
+                        </g>
+                        <text x="100" y="102" text-anchor="middle" fill="#F4F3EB" font-family="Newsreader, Georgia, serif" font-weight="600" font-size="31" letter-spacing="-0.5">Second</text>
+                        <text x="100" y="131" text-anchor="middle" fill="#F4F3EB" font-family="Newsreader, Georgia, serif" font-weight="600" font-size="31" letter-spacing="-0.5">Life</text>
+                    </svg>
+                    <img id="brand-logo-preview" src="" alt="Logo Second Life" class="w-full h-full object-cover hidden">
+                    <div class="absolute inset-0 bg-stone-900/65 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[10px] font-medium text-center px-1">
+                        Modifier
+                    </div>
+                </div>
+                <input type="file" id="brand-logo-input" accept="image/*" class="hidden" onchange="handleBrandLogoChange(event)">
+                
+                <div class="cursor-pointer" onclick="navigate('accueil')">
+                    <span class="editorial-title text-2xl font-semibold tracking-tight text-stone-900 block leading-none">Second Life</span>
+                    <span class="text-[11px] text-stone-500 tracking-wide uppercase font-medium">Seconde Main • Tunisie</span>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="hidden md:flex flex-1 max-w-md mx-4">
+                <div class="relative w-full">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></i>
+                    <input type="text" id="desktop-search" oninput="applyCatalogueFilters()" placeholder="Rechercher un article, une marque, une taille..." class="w-full pl-9 pr-4 py-2 bg-stone-100 border border-stone-200 rounded-lg text-sm text-stone-900 placeholder-stone-400 focus:bg-white focus:border-stone-800 focus:outline-none transition-colors">
+                </div>
+            </div>
+
+            <!-- Right Action Icons -->
+            <div class="flex items-center gap-1.5 sm:gap-2.5">
+                <a href="https://www.instagram.com/second__life_111" target="_blank" rel="noopener noreferrer" class="p-2.5 rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors" title="Instagram @second__life_111">
+                    <i class="fa-brands fa-instagram text-base"></i>
+                </a>
+
+                <!-- Notifications Bell & Dropdown -->
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="relative p-2.5 rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer" title="Notifications">
+                        <i class="fa-regular fa-bell text-base"></i>
+                        <span id="notif-badge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-forest-700 text-white text-[10px] font-semibold flex items-center justify-center">3</span>
+                    </button>
+
+                    <div id="notif-dropdown" class="hidden absolute right-0 mt-2 w-80 bg-white border border-stone-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-stone-200 flex items-center justify-between bg-stone-50">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-stone-800">Notifications</span>
+                            <button onclick="markAllNotificationsRead()" class="text-xs text-forest-700 hover:underline font-medium cursor-pointer">Tout marquer lu</button>
+                        </div>
+                        <div id="notif-list" class="max-h-72 overflow-y-auto divide-y divide-stone-100 text-xs"></div>
+                        <div class="px-4 py-2.5 bg-stone-50 border-t border-stone-200 text-[11px] text-stone-500 flex items-center justify-between">
+                            <span>Sync Supabase Realtime</span>
+                            <span id="notif-sync-tag" class="font-medium text-stone-700">Prêt</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messagerie Button -->
+                <button onclick="openDrawer('messagerie-drawer')" class="relative p-2.5 rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer" title="Messagerie">
+                    <i class="fa-regular fa-envelope text-base"></i>
+                    <span id="msg-badge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-stone-900 text-white text-[10px] font-semibold flex items-center justify-center">2</span>
+                </button>
+
+                <!-- Panier Button -->
+                <button onclick="openDrawer('panier-drawer')" class="relative p-2.5 rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer" title="Panier">
+                    <i class="fa-solid fa-bag-shopping text-base"></i>
+                    <span id="panier-badge" class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-forest-700 text-white text-[10px] font-semibold flex items-center justify-center">0</span>
+                </button>
+
+                <!-- Account Button -->
+                <button onclick="openModal('account-modal')" class="flex items-center gap-2 px-3 py-2 rounded-lg border border-stone-200 text-stone-800 hover:bg-stone-100 text-sm font-medium transition-colors cursor-pointer">
+                    <i class="fa-regular fa-user text-sm"></i>
+                    <span id="header-user-label" class="hidden lg:inline">Compte</span>
+                </button>
+
+                <!-- + Vendre CTA -->
+                <button onclick="openModal('sell-modal')" class="flex items-center gap-1.5 bg-forest-700 hover:bg-forest-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>Vendre</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Search -->
+        <div class="md:hidden px-4 pb-3">
+            <div class="relative w-full">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400 text-xs"></i>
+                <input type="text" id="mobile-search" oninput="applyCatalogueFilters()" placeholder="Rechercher un article..." class="w-full pl-9 pr-4 py-2 bg-stone-100 border border-stone-200 rounded-lg text-sm focus:bg-white focus:border-stone-800 focus:outline-none">
+            </div>
+        </div>
+
+        <!-- Sub-Navigation Links -->
+        <nav class="bg-stone-50 border-t border-stone-200">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-6 overflow-x-auto no-scrollbar text-sm">
+                <button onclick="navigate('accueil')" id="nav-accueil" class="nav-link py-3 border-b-2 border-stone-900 font-semibold text-stone-900 whitespace-nowrap cursor-pointer">
+                    Catalogue
+                </button>
+                <button onclick="navigate('premium')" id="nav-premium" class="nav-link py-3 border-b-2 border-transparent text-stone-600 hover:text-stone-900 font-medium whitespace-nowrap cursor-pointer">
+                    Premium & Sponsoring
+                </button>
+                <button onclick="navigate('assistant')" id="nav-assistant" class="nav-link py-3 border-b-2 border-transparent text-stone-600 hover:text-stone-900 font-medium whitespace-nowrap cursor-pointer">
+                    Assistance AI
+                </button>
+                <button onclick="navigate('contrat')" id="nav-contrat" class="nav-link py-3 border-b-2 border-transparent text-stone-600 hover:text-stone-900 font-medium whitespace-nowrap cursor-pointer">
+                    Contrat & Règlement
+                </button>
+                <button onclick="navigate('admin')" id="nav-admin" class="nav-link py-3 border-b-2 border-transparent text-stone-600 hover:text-stone-900 font-medium whitespace-nowrap cursor-pointer flex items-center gap-1.5">
+                    <i class="fa-solid fa-sliders text-xs"></i> Admin / Contrôle
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- SECTION 1: ACCUEIL & CATALOGUE -->
+        <section id="page-accueil" class="space-y-8">
+            <div class="bg-white border border-stone-200 rounded-xl p-6 sm:p-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div class="max-w-xl space-y-3">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-forest-700">Plateforme Collaborative C2C</p>
+                    <h1 class="editorial-title text-3xl sm:text-4xl font-semibold text-stone-900 leading-tight">
+                        Achetez et vendez vos pièces de seconde main entre particuliers.
+                    </h1>
+                    <p class="text-sm text-stone-600 leading-relaxed">
+                        Publiez vos articles en quelques secondes avec photo directe. Une commission claire de 10% s'applique uniquement lors de la vente.
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-3 shrink-0">
+                    <button onclick="openModal('sell-modal')" class="bg-stone-900 hover:bg-stone-800 text-white px-5 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer">
+                        Déposer une annonce
+                    </button>
+                    <button onclick="navigate('premium')" class="bg-stone-100 hover:bg-stone-200 text-stone-900 border border-stone-300 px-5 py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer">
+                        Options Sponsoring
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white border border-stone-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                    <button onclick="setCategoryFilter('Tout')" id="cat-Tout" class="cat-pill px-4 py-2 rounded-lg text-xs font-semibold bg-stone-900 text-white transition-colors cursor-pointer">Tout</button>
+                    <button onclick="setCategoryFilter('Femme')" id="cat-Femme" class="cat-pill px-4 py-2 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors cursor-pointer">Femme</button>
+                    <button onclick="setCategoryFilter('Homme')" id="cat-Homme" class="cat-pill px-4 py-2 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors cursor-pointer">Homme</button>
+                    <button onclick="setCategoryFilter('Enfant')" id="cat-Enfant" class="cat-pill px-4 py-2 rounded-lg text-xs font-semibold bg-stone-100 text-stone-700 hover:bg-stone-200 transition-colors cursor-pointer">Enfant</button>
+                </div>
+
+                <div class="flex items-center gap-2.5 self-end sm:self-auto">
+                    <label for="sort-order" class="text-xs font-medium text-stone-500 whitespace-nowrap">Trier par :</label>
+                    <select id="sort-order" onchange="applyCatalogueFilters()" class="bg-stone-50 border border-stone-300 text-stone-800 text-xs font-medium rounded-lg px-3 py-2 focus:outline-none focus:border-stone-900 cursor-pointer">
+                        <option value="sponsored">Sponsorisé en premier</option>
+                        <option value="price-asc">Prix croissant (DT)</option>
+                        <option value="price-desc">Prix décroissant (DT)</option>
+                        <option value="newest">Plus récents</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-semibold text-stone-800">
+                        Articles disponibles (<span id="catalogue-count">0</span>)
+                    </h2>
+                    <span class="text-xs text-stone-500">Prix affichés en Dinars Tunisiens (DT)</span>
+                </div>
+                <div id="catalogue-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: PREMIUM & SPONSORING -->
+        <section id="page-premium" class="hidden space-y-8">
+            <div class="max-w-2xl">
+                <p class="text-xs font-semibold uppercase tracking-widest text-forest-700">Visibilité & Avantages</p>
+                <h2 class="editorial-title text-3xl font-semibold text-stone-900 mt-1">Second Life Premium & Sponsoring</h2>
+                <p class="text-sm text-stone-600 mt-2">
+                    Mettez en avant vos articles en tête de catalogue ou réduisez vos frais de commission grâce à nos formules dédiées aux vendeurs réguliers.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white border border-stone-200 rounded-xl p-6 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Particulier</span>
+                        <h3 class="text-xl font-bold text-stone-900">Compte Standard</h3>
+                        <div class="text-2xl font-bold text-stone-900">Gratuit</div>
+                        <p class="text-xs text-stone-600">Idéal pour vider son dressing occasionnellement.</p>
+                        <ul class="space-y-2.5 text-sm text-stone-700 pt-4 border-t border-stone-100">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-forest-700 text-xs"></i> Annonces illimitées</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-forest-700 text-xs"></i> Commission standard de 10%</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-forest-700 text-xs"></i> Messagerie acheteur-vendeur</li>
+                        </ul>
+                    </div>
+                    <button class="mt-6 w-full py-2.5 px-4 rounded-lg border border-stone-300 text-stone-700 text-sm font-medium bg-stone-50">Plan actuel</button>
+                </div>
+
+                <div class="bg-white border-2 border-stone-900 rounded-xl p-6 flex flex-col justify-between relative">
+                    <span class="absolute -top-3 right-5 bg-stone-900 text-white text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded">Recommandé</span>
+                    <div class="space-y-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-forest-700">Boost unitaire</span>
+                        <h3 class="text-xl font-bold text-stone-900">Sponsoring Annonce</h3>
+                        <div class="text-2xl font-bold text-stone-900">5 DT <span class="text-xs font-normal text-stone-500">/ 7 jours</span></div>
+                        <p class="text-xs text-stone-600">Placez votre article tout en haut du catalogue avec le badge « Sponsorisé ».</p>
+                        <ul class="space-y-2.5 text-sm text-stone-700 pt-4 border-t border-stone-100">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-forest-700 text-xs"></i> Affichage prioritaire en tête de liste</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-forest-700 text-xs"></i> Badge officiel « Sponsorisé »</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-forest-700 text-xs"></i> Partage en story sur @second__life_111</li>
+                        </ul>
+                    </div>
+                    <button onclick="openModal('sell-modal')" class="mt-6 w-full py-2.5 px-4 rounded-lg bg-stone-900 hover:bg-stone-800 text-white text-sm font-medium transition-colors cursor-pointer">
+                        Publier une annonce sponsorisée
+                    </button>
+                </div>
+
+                <div class="bg-white border border-stone-200 rounded-xl p-6 flex flex-col justify-between">
+                    <div class="space-y-4">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-stone-500">Vendeur Régulier</span>
+                        <h3 class="text-xl font-bold text-stone-900">Second Life Premium</h3>
+                        <div class="text-2xl font-bold text-stone-900">25 DT <span class="text-xs font-normal text-stone-500">/ mois</span></div>
+                        <p class="text-xs text-stone-600">Conçu pour les créateurs et friperies sélectionnées.</p>
+                        <ul class="space-y-2.5 text-sm text-stone-700 pt-4 border-t border-stone-100">
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-forest-700 text-xs"></i> 0% de commission sur vos ventes</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-forest-700 text-xs"></i> Badge Vendeur Vérifié</li>
+                            <li class="flex items-center gap-2"><i class="fa-solid fa-check text-forest-700 text-xs"></i> 3 sponsorings inclus chaque mois</li>
+                        </ul>
+                    </div>
+                    <button onclick="activatePremiumAccount()" class="mt-6 w-full py-2.5 px-4 rounded-lg bg-forest-700 hover:bg-forest-800 text-white text-sm font-medium transition-colors cursor-pointer">
+                        Activer Premium
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: ASSISTANCE AI -->
+        <section id="page-assistant" class="hidden max-w-3xl mx-auto space-y-6">
+            <div>
+                <p class="text-xs font-semibold uppercase tracking-widest text-forest-700">Aide à la vente</p>
+                <h2 class="editorial-title text-3xl font-semibold text-stone-900 mt-1">Second Life Assistant</h2>
+                <p class="text-sm text-stone-600 mt-1">
+                    Estimez le juste prix d'un vêtement en Dinars Tunisiens, générez une description claire ou posez vos questions sur le fonctionnement du site.
+                </p>
+            </div>
+
+            <div class="bg-white border border-stone-200 rounded-xl overflow-hidden flex flex-col h-[480px]">
+                <div class="p-3 bg-stone-50 border-b border-stone-200 flex flex-wrap gap-2">
+                    <button onclick="askAssistantPreset('Estimer le prix d\'une veste en jean Levi\'s')" class="text-xs bg-white border border-stone-300 hover:border-stone-800 px-3 py-1.5 rounded-lg text-stone-700 cursor-pointer">Estimer une veste Levi's</button>
+                    <button onclick="askAssistantPreset('Rédiger une description pour une robe d\'été')" class="text-xs bg-white border border-stone-300 hover:border-stone-800 px-3 py-1.5 rounded-lg text-stone-700 cursor-pointer">Rédiger une description</button>
+                    <button onclick="askAssistantPreset('Comment fonctionne la commission de 10% ?')" class="text-xs bg-white border border-stone-300 hover:border-stone-800 px-3 py-1.5 rounded-lg text-stone-700 cursor-pointer">Calcul commission 10%</button>
+                </div>
+
+                <div id="assistant-messages" class="flex-1 p-5 overflow-y-auto space-y-4 text-sm">
+                    <div class="flex gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-stone-900 text-white flex items-center justify-center text-xs font-semibold shrink-0">SL</div>
+                        <div class="bg-stone-100 border border-stone-200 rounded-xl p-3.5 text-stone-800 max-w-lg leading-relaxed">
+                            Bonjour ! Je suis l'assistant Second Life. Indiquez-moi le type de vêtement, sa marque et son état pour obtenir une estimation de prix en DT ou une description prête à publier.
+                        </div>
+                    </div>
+                </div>
+
+                <form onsubmit="handleAssistantSubmit(event)" class="p-3 border-t border-stone-200 bg-white flex gap-2">
+                    <input type="text" id="assistant-input" placeholder="Ex: Combien vendre un manteau Zara en laine bon état ?" class="flex-1 bg-stone-100 border border-stone-200 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:border-stone-900 focus:outline-none">
+                    <button type="submit" class="bg-stone-900 hover:bg-stone-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer">Envoyer</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- SECTION 4: CONTRAT & RÈGLEMENT -->
+        <section id="page-contrat" class="hidden max-w-3xl mx-auto">
+            <div class="bg-white border border-stone-200 rounded-xl p-6 sm:p-10 space-y-6">
+                <div class="border-b border-stone-200 pb-5">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-forest-700">Conditions Générales de Vente P2P</p>
+                    <h2 class="editorial-title text-3xl font-semibold text-stone-900 mt-1">Contrat & Règlement Second Life</h2>
+                    <p class="text-xs text-stone-500 mt-1">Applicable à tous les acheteurs et vendeurs inscrits sur la plateforme.</p>
+                </div>
+
+                <div class="space-y-5 text-sm text-stone-700 leading-relaxed">
+                    <div>
+                        <h3 class="font-semibold text-stone-900 mb-1">Article 1 — Rôle d'intermédiaire</h3>
+                        <p>Second Life met en relation des particuliers souhaitant vendre ou acheter des vêtements et accessoires de seconde main. Chaque vendeur certifie être le propriétaire légitime des articles mis en ligne.</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-stone-900 mb-1">Article 2 — Commission de 10%</h3>
+                        <p>La publication d'une annonce standard est gratuite. Lorsqu'un article est vendu, Second Life prélève une commission fixe de <strong>10%</strong> sur le prix de vente affiché (par exemple, pour un article vendu 30 DT, la commission est de 3 DT et le vendeur perçoit 27 DT net).</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-stone-900 mb-1">Article 3 — Livraison et Remise en main propre</h3>
+                        <p>Le vendeur s'engage à expédier l'article sous 48h ouvrées via un transporteur partenaire ou à convenir d'une remise en main propre avec l'acheteur via la messagerie intégrée.</p>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-stone-900 mb-1">Article 4 — Conformité des photos et modération</h3>
+                        <p>Les photos doivent être réelles et prises par le vendeur. Toute contrefaçon ou annonce frauduleuse sera supprimée par l'équipe d'administration dans la Partie Contrôle.</p>
+                    </div>
+                </div>
+
+                <div class="pt-5 border-t border-stone-200 flex items-center justify-between">
+                    <span class="text-xs text-stone-500">Version 1.0 — Second Life Tunisie</span>
+                    <button onclick="showToast('Règlement accepté et enregistré.')" class="bg-stone-900 hover:bg-stone-800 text-white px-5 py-2.5 rounded-lg text-sm font-medium cursor-pointer">Accepter le contrat</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: PAGE ADMINISTRATIF / COMPTE ADMINISTRATION -->
+        <section id="page-admin" class="hidden space-y-8">
+            <div id="admin-lock-screen" class="max-w-md mx-auto bg-white border border-stone-200 rounded-xl p-8 text-center space-y-5">
+                <div class="w-12 h-12 rounded-xl bg-stone-100 border border-stone-200 mx-auto flex items-center justify-center text-stone-800">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <div>
+                    <h2 class="editorial-title text-2xl font-semibold text-stone-900">Compte Administration</h2>
+                    <p class="text-xs text-stone-500 mt-1">Accès réservé à la gestion et au contrôle de Second Life.</p>
+                </div>
+                <div class="space-y-3">
+                    <input type="password" id="admin-pin-input" placeholder="Code PIN (Démo : 1234)" class="w-full text-center tracking-widest bg-stone-50 border border-stone-300 rounded-lg px-4 py-2.5 text-sm focus:bg-white focus:border-stone-900 focus:outline-none">
+                    <button onclick="unlockAdminPanel()" class="w-full bg-stone-900 hover:bg-stone-800 text-white py-2.5 rounded-lg text-sm font-medium cursor-pointer">Accéder à la Partie Contrôle</button>
+                    <button onclick="document.getElementById('admin-pin-input').value='1234'; unlockAdminPanel();" class="text-xs text-forest-700 hover:underline font-medium cursor-pointer">Connexion rapide (PIN 1234)</button>
+                </div>
+            </div>
+
+            <div id="admin-dashboard-content" class="hidden space-y-8">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200 pb-5">
+                    <div>
+                        <span class="text-xs font-semibold uppercase tracking-widest text-forest-700">Page Administratif</span>
+                        <h2 class="editorial-title text-3xl font-semibold text-stone-900">Partie Contrôle & Base de Données</h2>
+                    </div>
+                    <button onclick="lockAdminPanel()" class="self-start sm:self-auto px-4 py-2 rounded-lg border border-stone-300 text-xs font-medium text-stone-700 hover:bg-stone-100 cursor-pointer">
+                        <i class="fa-solid fa-lock mr-1.5"></i> Verrouiller l'accès
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white border border-stone-200 rounded-xl p-5">
+                        <span class="text-xs font-medium text-stone-500">Volume Total Articles</span>
+                        <div id="kpi-total-volume" class="text-2xl font-bold text-stone-900 mt-1">0.00 DT</div>
+                        <span class="text-[11px] text-stone-400 mt-1 block">Valeur brute du catalogue</span>
+                    </div>
+                    <div class="bg-white border border-stone-200 rounded-xl p-5">
+                        <span class="text-xs font-medium text-stone-500">Commissions (10%)</span>
+                        <div id="kpi-total-commissions" class="text-2xl font-bold text-forest-700 mt-1">0.00 DT</div>
+                        <span class="text-[11px] text-stone-400 mt-1 block">Revenu plateforme estimé</span>
+                    </div>
+                    <div class="bg-white border border-stone-200 rounded-xl p-5">
+                        <span class="text-xs font-medium text-stone-500">Articles Actifs</span>
+                        <div id="kpi-active-items" class="text-2xl font-bold text-stone-900 mt-1">0</div>
+                        <span class="text-[11px] text-stone-400 mt-1 block">En ligne sur l'accueil</span>
+                    </div>
+                    <div class="bg-white border border-stone-200 rounded-xl p-5">
+                        <span class="text-xs font-medium text-stone-500">Utilisateurs Inscrits</span>
+                        <div id="kpi-users-count" class="text-2xl font-bold text-stone-900 mt-1">4</div>
+                        <span class="text-[11px] text-stone-400 mt-1 block">Acheteurs & Vendeurs</span>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-stone-200 rounded-xl p-6 space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-stone-100 pb-4">
+                        <div>
+                            <h3 class="text-base font-semibold text-stone-900 flex items-center gap-2">
+                                <i class="fa-solid fa-database text-forest-700"></i> Connexion Base de Données Supabase
+                            </h3>
+                            <p class="text-xs text-stone-500 mt-0.5">
+                                Renseignez vos identifiants Supabase pour synchroniser la table <code>articles</code>.
+                            </p>
+                        </div>
+                        <span id="db-badge-status" class="text-xs font-medium px-2.5 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200 self-start">
+                            Stockage Local Actif
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">SUPABASE_URL</label>
+                            <input type="text" id="supabase-url-input" placeholder="https://xydaproiemsazsfmdgyc.supabase.co" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3.5 py-2 text-xs font-mono focus:bg-white focus:border-stone-900 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">SUPABASE_ANON_KEY</label>
+                            <input type="password" id="supabase-key-input" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3.5 py-2 text-xs font-mono focus:bg-white focus:border-stone-900 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+                        <span class="text-[11px] text-stone-500">Connecté en temps réel à Supabase dès l'enregistrement.</span>
+                        <div class="flex gap-2">
+                            <button onclick="clearSupabaseConfig()" class="px-3.5 py-2 rounded-lg border border-stone-300 text-xs font-medium text-stone-600 hover:bg-stone-100 cursor-pointer">Déconnecter</button>
+                            <button onclick="saveSupabaseConfig()" class="px-4 py-2 rounded-lg bg-forest-700 hover:bg-forest-800 text-white text-xs font-medium cursor-pointer">Enregistrer la configuration</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-stone-200 rounded-xl overflow-hidden">
+                    <div class="px-6 py-4 border-b border-stone-200 flex flex-wrap items-center justify-between gap-2 bg-stone-50">
+                        <h3 class="text-sm font-semibold text-stone-900">Partie Contrôle — Modération des Annonces & Commissions</h3>
+                        <button onclick="resetAllDemoData()" class="text-xs text-stone-600 hover:text-stone-900 underline cursor-pointer">Réinitialiser les articles de démonstration</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="border-b border-stone-200 text-stone-500 uppercase tracking-wider bg-white">
+                                    <th class="py-3.5 px-4 font-semibold">Article</th>
+                                    <th class="py-3.5 px-4 font-semibold">Catégorie</th>
+                                    <th class="py-3.5 px-4 font-semibold">Vendeur</th>
+                                    <th class="py-3.5 px-4 font-semibold">Prix (DT)</th>
+                                    <th class="py-3.5 px-4 font-semibold">Com. 10%</th>
+                                    <th class="py-3.5 px-4 font-semibold">Sponsoring</th>
+                                    <th class="py-3.5 px-4 font-semibold text-right">Contrôle</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-control-tbody" class="divide-y divide-stone-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-stone-200 mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
+            <div>
+                <span class="editorial-title font-semibold text-base text-stone-900 mr-2">Second Life</span>
+                <span>© 2026 — Marketplace Seconde Main Tunisie. Tous droits réservés.</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-5">
+                <button onclick="navigate('contrat')" class="hover:text-stone-900 cursor-pointer">Contrat & Commission 10%</button>
+                <button onclick="navigate('premium')" class="hover:text-stone-900 cursor-pointer">Premium & Sponsoring</button>
+                <a href="https://www.instagram.com/second__life_111" target="_blank" rel="noopener noreferrer" class="text-stone-800 font-medium hover:underline inline-flex items-center gap-1.5">
+                    <i class="fa-brands fa-instagram"></i> @second__life_111
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- MODAL: VENDRE UN ARTICLE -->
+    <div id="sell-modal" class="fixed inset-0 z-50 bg-stone-900/50 hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-stone-200 rounded-xl max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl">
+            <div class="px-6 py-4 border-b border-stone-200 flex items-center justify-between sticky top-0 bg-white z-10">
+                <h3 class="editorial-title text-xl font-semibold text-stone-900">Mettre un article en vente</h3>
+                <button onclick="closeModal('sell-modal')" class="text-stone-400 hover:text-stone-800 p-1 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <form id="sell-form" onsubmit="handlePublishItem(event)" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-2">Photo de l'article</label>
+                    <div class="border border-dashed border-stone-300 rounded-xl p-4 bg-stone-50 text-center space-y-3">
+                        <div id="sell-photo-preview-box" class="hidden">
+                            <img id="sell-photo-preview" src="" alt="Aperçu article" class="h-40 mx-auto rounded-lg object-cover border border-stone-200">
+                        </div>
+                        <div class="flex flex-wrap justify-center gap-2">
+                            <button type="button" onclick="document.getElementById('input-upload-gallery').click()" class="px-3.5 py-2 bg-white border border-stone-300 hover:border-stone-800 rounded-lg text-xs font-medium text-stone-800 inline-flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-regular fa-image"></i> Importer une photo
+                            </button>
+                            <button type="button" onclick="document.getElementById('input-take-photo').click()" class="px-3.5 py-2 bg-stone-900 hover:bg-stone-800 rounded-lg text-xs font-medium text-white inline-flex items-center gap-1.5 cursor-pointer">
+                                <i class="fa-solid fa-camera"></i> Prendre une photo
+                            </button>
+                        </div>
+                        <input type="file" id="input-upload-gallery" accept="image/*" class="hidden" onchange="handleItemPhotoSelect(event)">
+                        <input type="file" id="input-take-photo" accept="image/*" capture="environment" class="hidden" onchange="handleItemPhotoSelect(event)">
+                        <p class="text-[11px] text-stone-500">Formats acceptés : JPG, PNG, WEBP.</p>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-1">Titre de l'article *</label>
+                    <input type="text" id="sell-title" required placeholder="Ex: Trench beige Zara taille M" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:border-stone-900 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-1">Catégorie *</label>
+                        <select id="sell-category" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:border-stone-900 focus:outline-none cursor-pointer">
+                            <option value="Femme">Femme</option>
+                            <option value="Homme">Homme</option>
+                            <option value="Enfant">Enfant</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-1">Prix affiché (DT) *</label>
+                        <input type="number" id="sell-price" required min="1" step="0.5" placeholder="30" oninput="updateLiveCommissionCalc()" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3.5 py-2.5 text-sm focus:bg-white focus:border-stone-900 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="bg-stone-100 border border-stone-200 rounded-lg p-4 space-y-2 text-xs">
+                    <div class="flex items-center justify-between font-semibold text-stone-900">
+                        <span>Note sur la commission Second Life (10%)</span>
+                        <span class="text-forest-700">Transparence P2P</span>
+                    </div>
+                    <p class="text-stone-600 leading-relaxed">
+                        Second Life prélève une commission de <strong>10%</strong> sur le prix de vente pour assurer le fonctionnement et la sécurité de la plateforme.
+                    </p>
+                    <div class="pt-2 border-t border-stone-200 grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-white p-2 rounded border border-stone-200">
+                            <span class="block text-[10px] text-stone-500">Prix acheteur</span>
+                            <strong id="calc-gross" class="text-stone-900">0.00 DT</strong>
+                        </div>
+                        <div class="bg-white p-2 rounded border border-stone-200">
+                            <span class="block text-[10px] text-stone-500">Commission 10%</span>
+                            <strong id="calc-fee" class="text-stone-700">- 0.00 DT</strong>
+                        </div>
+                        <div class="bg-white p-2 rounded border border-stone-200">
+                            <span class="block text-[10px] text-stone-500">Vous recevez</span>
+                            <strong id="calc-net" class="text-forest-700">0.00 DT</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-stone-700 mb-1">Description & État</label>
+                    <textarea id="sell-desc" rows="2" placeholder="Taille, matière, état général, mode de livraison souhaité..." class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3.5 py-2 text-sm focus:bg-white focus:border-stone-900 focus:outline-none"></textarea>
+                </div>
+
+                <label class="flex items-center justify-between p-3.5 rounded-lg border border-stone-200 bg-stone-50 cursor-pointer">
+                    <div>
+                        <span class="text-xs font-semibold text-stone-900 block">Sponsoriser cette annonce</span>
+                        <span class="text-[11px] text-stone-500">Afficher en tête de liste avec le badge « Sponsorisé »</span>
+                    </div>
+                    <input type="checkbox" id="sell-sponsored" class="w-4 h-4 accent-stone-900">
+                </label>
+
+                <label class="flex items-start gap-2.5 text-xs text-stone-600 cursor-pointer">
+                    <input type="checkbox" id="sell-accept-contrat" required class="mt-0.5 accent-stone-900">
+                    <span>
+                        J'accepte le <button type="button" onclick="closeModal('sell-modal'); navigate('contrat');" class="underline text-stone-900 font-medium">Contrat de vente Second Life</button> et la commission de 10% appliquée lors de la transaction.
+                    </span>
+                </label>
+
+                <button type="submit" class="w-full bg-forest-700 hover:bg-forest-800 text-white py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer">
+                    Publier l'article maintenant
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: COMPTE UTILISATEUR -->
+    <div id="account-modal" class="fixed inset-0 z-50 bg-stone-900/50 hidden flex items-center justify-center p-4">
+        <div class="bg-white border border-stone-200 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between border-b border-stone-200 pb-3">
+                <h3 class="editorial-title text-xl font-semibold text-stone-900">Espace Compte</h3>
+                <button onclick="closeModal('account-modal')" class="text-stone-400 hover:text-stone-800 cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 p-1 bg-stone-100 rounded-lg text-xs font-medium">
+                <button type="button" id="role-btn-client" onclick="selectAccountRole('client')" class="py-2 rounded-md bg-white text-stone-900 shadow-2xs cursor-pointer">Membre Client</button>
+                <button type="button" id="role-btn-admin" onclick="selectAccountRole('admin')" class="py-2 rounded-md text-stone-600 hover:text-stone-900 cursor-pointer">Compte Administration</button>
+            </div>
+
+            <form onsubmit="handleAccountLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Nom complet / Pseudo</label>
+                    <input type="text" id="acc-name" required placeholder="Ex: Sarra Ben Amor" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3.5 py-2 text-sm focus:bg-white focus:border-stone-900 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Adresse Email</label>
+                    <input type="email" id="acc-email" required placeholder="sarra@exemple.tn" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3.5 py-2 text-sm focus:bg-white focus:border-stone-900 focus:outline-none">
+                </div>
+                <div id="acc-admin-pin-wrapper" class="hidden">
+                    <label class="block text-xs font-medium text-stone-700 mb-1">Code PIN Administration (1234)</label>
+                    <input type="password" id="acc-admin-pin" placeholder="1234" class="w-full bg-stone-50 border border-stone-300 rounded-lg px-3.5 py-2 text-sm focus:bg-white focus:border-stone-900 focus:outline-none">
+                </div>
+
+                <button type="submit" class="w-full bg-stone-900 hover:bg-stone-800 text-white py-2.5 rounded-lg text-sm font-medium cursor-pointer">Continuer</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- DRAWER: PANIER -->
+    <div id="panier-drawer" class="fixed inset-0 z-50 bg-stone-900/50 hidden flex justify-end">
+        <div class="bg-white w-full max-w-md h-full flex flex-col justify-between shadow-2xl border-l border-stone-200">
+            <div class="px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+                <h3 class="editorial-title text-xl font-semibold text-stone-900">Votre Panier</h3>
+                <button onclick="closeDrawer('panier-drawer')" class="text-stone-500 hover:text-stone-900 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div id="panier-items-list" class="flex-1 overflow-y-auto p-6 divide-y divide-stone-100"></div>
+
+            <div id="panier-footer" class="p-6 border-t border-stone-200 bg-stone-50 space-y-4">
+                <div class="space-y-1.5 text-xs">
+                    <div class="flex justify-between text-stone-600">
+                        <span>Articles</span>
+                        <span id="panier-subtotal" class="font-medium text-stone-900">0.00 DT</span>
+                    </div>
+                    <div class="flex justify-between text-stone-600">
+                        <span>Frais de livraison estimés</span>
+                        <span id="panier-shipping" class="font-medium text-stone-900">7.00 DT</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-bold text-stone-900 pt-2 border-t border-stone-200">
+                        <span>Total à régler</span>
+                        <span id="panier-total">0.00 DT</span>
+                    </div>
+                </div>
+                <button onclick="confirmPanierOrder()" class="w-full bg-forest-700 hover:bg-forest-800 text-white py-3 rounded-lg text-sm font-medium transition-colors cursor-pointer">Valider la commande</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- DRAWER: MESSAGERIE -->
+    <div id="messagerie-drawer" class="fixed inset-0 z-50 bg-stone-900/50 hidden flex justify-end">
+        <div class="bg-white w-full max-w-lg h-full flex flex-col shadow-2xl border-l border-stone-200">
+            <div class="px-6 py-4 border-b border-stone-200 flex items-center justify-between">
+                <div>
+                    <h3 class="editorial-title text-xl font-semibold text-stone-900">Messagerie Directe</h3>
+                    <span id="chat-active-contact" class="text-xs text-stone-500">Discussion avec Yasmine K.</span>
+                </div>
+                <button onclick="closeDrawer('messagerie-drawer')" class="text-stone-500 hover:text-stone-900 cursor-pointer">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
+
+            <div class="px-4 py-2.5 bg-stone-50 border-b border-stone-200 flex gap-2 overflow-x-auto no-scrollbar text-xs">
+                <button onclick="switchChatContact('Yasmine K.', 'Manteau laine camel')" class="px-3 py-1.5 rounded-full bg-stone-900 text-white font-medium whitespace-nowrap cursor-pointer">Yasmine K.</button>
+                <button onclick="switchChatContact('Mehdi B.', 'Chemise lin blanc')" class="px-3 py-1.5 rounded-full bg-white border border-stone-300 text-stone-700 hover:border-stone-800 whitespace-nowrap cursor-pointer">Mehdi B.</button>
+                <button onclick="switchChatContact('Support Second Life', 'Assistance livraison')" class="px-3 py-1.5 rounded-full bg-white border border-stone-300 text-stone-700 hover:border-stone-800 whitespace-nowrap cursor-pointer">Support Second Life</button>
+            </div>
+
+            <div id="drawer-chat-feed" class="flex-1 p-5 overflow-y-auto space-y-3 text-xs">
+                <div class="flex justify-start">
+                    <div class="bg-stone-100 border border-stone-200 text-stone-800 px-3.5 py-2.5 rounded-xl max-w-xs">
+                        Bonjour ! L'article est toujours disponible. Remise en main propre possible sur Tunis ou livraison rapide.
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <div class="bg-stone-900 text-white px-3.5 py-2.5 rounded-xl max-w-xs">
+                        Parfait, merci pour la précision !
+                    </div>
+                </div>
+            </div>
+
+            <form onsubmit="handleSendDirectMessage(event)" class="p-4 border-t border-stone-200 bg-white flex gap-2">
+                <input type="text" id="drawer-chat-input" placeholder="Écrire un message au vendeur..." class="flex-1 bg-stone-100 border border-stone-200 rounded-lg px-3.5 py-2.5 text-xs focus:bg-white focus:border-stone-900 focus:outline-none">
+                <button type="submit" class="bg-stone-900 hover:bg-stone-800 text-white px-4 py-2.5 rounded-lg text-xs font-medium cursor-pointer">Envoyer</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const StorageKeys = {
+            ARTICLES: 'sl_articles_v2',
+            CART: 'sl_cart_v2',
+            NOTIFS: 'sl_notifs_v2',
+            LOGO: 'sl_custom_logo_v2',
+            SUPABASE_CFG: 'sl_supabase_config_v2',
+            USER: 'sl_current_user_v2'
+        };
+
+        const initialSeedArticles = [
+            {
+                id: 101,
+                title: "Manteau long en laine mélangée camel",
+                category: "Femme",
+                price: 85.0,
+                seller: "Yasmine K.",
+                sponsored: true,
+                description: "Coupe droite élégante, taille 38, porté deux fois. Très bon état.",
+                image: "https://images.unsplash.com/photo-1539533018447-63fcce2678e3?w=600&auto=format&fit=crop&q=80"
+            },
+            {
+                id: 102,
+                title: "Chemise 100% lin blanc cassé",
+                category: "Homme",
+                price: 40.0,
+                seller: "Mehdi B.",
+                sponsored: false,
+                description: "Taille L, coupe classique respirante, idéale mi-saison.",
+                image: "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=600&auto=format&fit=crop&q=80"
+            },
+            {
+                id: 103,
+                title: "Veste en jean brute vintage",
+                category: "Femme",
+                price: 55.0,
+                seller: "Ines M.",
+                sponsored: true,
+                description: "Denim épais de qualité, taille M, boutons métalliques d'origine.",
+                image: "https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=600&auto=format&fit=crop&q=80"
+            },
+            {
+                id: 104,
+                title: "Salopette en coton velours côtelé",
+                category: "Enfant",
+                price: 28.0,
+                seller: "Nadia T.",
+                sponsored: false,
+                description: "Pour enfant 5-6 ans, couleur terre cuite, bretelles réglables.",
+                image: "https://images.unsplash.com/photo-1519238263530-99bdd11df2ea?w=600&auto=format&fit=crop&q=80"
+            },
+            {
+                id: 105,
+                title: "Pull maille mérinos gris anthracite",
+                category: "Homme",
+                price: 45.0,
+                seller: "Karim S.",
+                sponsored: false,
+                description: "Col rond, taille M, doux et sans bouloches.",
+                image: "https://images.unsplash.com/photo-1614975059251-992f11792b9f?w=600&auto=format&fit=crop&q=80"
+            },
+            {
+                id: 106,
+                title: "Blouson léger imperméable enfant",
+                category: "Enfant",
+                price: 32.0,
+                seller: "Salma R.",
+                sponsored: false,
+                description: "Taille 8 ans, doublure coton rayée, fermeture éclair intacte.",
+                image: "https://images.unsplash.com/photo-1503919545889-aef636e10ad4?w=600&auto=format&fit=crop&q=80"
+            }
+        ];
+
+        const initialNotifications = [
+            { id: 1, text: "Bienvenue sur Second Life ! Commission transparente de 10%.", time: "À l'instant", unread: true },
+            { id: 2, text: "Yasmine K. a répondu à votre message.", time: "Il y a 15 min", unread: true },
+            { id: 3, text: "Nouvelle annonce sponsorisée dans la catégorie Femme.", time: "Il y a 1 h", unread: true }
+        ];
+
+        let articles = JSON.parse(localStorage.getItem(StorageKeys.ARTICLES)) || [...initialSeedArticles];
+        let cart = JSON.parse(localStorage.getItem(StorageKeys.CART)) || [];
+        let notifications = JSON.parse(localStorage.getItem(StorageKeys.NOTIFS)) || [...initialNotifications];
+        let activeCategory = 'Tout';
+        let uploadedItemPhotoData = null;
+        let selectedRole = 'client';
+        let isAdminUnlocked = false;
+        let sbClient = null;
+
+        function initSupabaseClient() {
+            const cfg = JSON.parse(localStorage.getItem(StorageKeys.SUPABASE_CFG) || "null");
+            if (cfg && cfg.url && cfg.key && window.supabase) {
+                sbClient = window.supabase.createClient(cfg.url, cfg.key);
+                return sbClient;
+            }
+            sbClient = null;
+            return null;
+        }
+
+        async function loadArticlesFromSupabase() {
+            const client = initSupabaseClient();
+            if (!client) return;
+
+            const { data, error } = await client
+                .from("articles")
+                .select("*")
+                .order("id", { ascending: false });
+
+            if (!error && Array.isArray(data) && data.length > 0) {
+                articles = data;
+                saveArticlesState();
+                applyCatalogueFilters();
+                renderAdminPanel();
+            } else if (error) {
+                console.error("Supabase select error:", error);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            loadSavedBrandLogo();
+            loadSavedSupabaseConfig();
+            loadSavedUser();
+            renderNotifications();
+            applyCatalogueFilters();
+            updatePanierUI();
+            renderAdminPanel();
+            await loadArticlesFromSupabase();
+        });
+
+        function navigate(pageName) {
+            const pages = ['accueil', 'premium', 'assistant', 'contrat', 'admin'];
+            pages.forEach(p => {
+                const sec = document.getElementById(`page-${p}`);
+                const link = document.getElementById(`nav-${p}`);
+                if (sec) sec.classList.add('hidden');
+                if (link) {
+                    link.classList.remove('border-stone-900', 'font-semibold', 'text-stone-900');
+                    link.classList.add('border-transparent', 'font-medium', 'text-stone-600');
+                }
+            });
+
+            const targetSec = document.getElementById(`page-${pageName}`);
+            const targetLink = document.getElementById(`nav-${pageName}`);
+            if (targetSec) targetSec.classList.remove('hidden');
+            if (targetLink) {
+                targetLink.classList.remove('border-transparent', 'font-medium', 'text-stone-600');
+                targetLink.classList.add('border-stone-900', 'font-semibold', 'text-stone-900');
+            }
+
+            if (pageName === 'admin') renderAdminPanel();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function openDrawer(id) {
+            document.getElementById(id).classList.remove('hidden');
+            if (id === 'panier-drawer') updatePanierUI();
+        }
+        function closeDrawer(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function showToast(message) {
+            const banner = document.getElementById('toast-banner');
+            document.getElementById('toast-text').innerText = message;
+            banner.classList.remove('translate-y-24', 'opacity-0');
+            setTimeout(() => { banner.classList.add('translate-y-24', 'opacity-0'); }, 3000);
+        }
+
+        function handleBrandLogoChange(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                localStorage.setItem(StorageKeys.LOGO, e.target.result);
+                applyBrandLogo(e.target.result);
+                showToast('Logo Second Life mis à jour.');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function loadSavedBrandLogo() {
+            const saved = localStorage.getItem(StorageKeys.LOGO);
+            if (saved) applyBrandLogo(saved);
+        }
+
+        function applyBrandLogo(dataUrl) {
+            document.getElementById('brand-logo-svg').classList.add('hidden');
+            const img = document.getElementById('brand-logo-preview');
+            img.src = dataUrl;
+            img.classList.remove('hidden');
+        }
+
+        function setCategoryFilter(cat) {
+            activeCategory = cat;
+            document.querySelectorAll('.cat-pill').forEach(btn => {
+                btn.classList.remove('bg-stone-900', 'text-white');
+                btn.classList.add('bg-stone-100', 'text-stone-700');
+            });
+            const activeBtn = document.getElementById(`cat-${cat}`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-stone-100', 'text-stone-700');
+                activeBtn.classList.add('bg-stone-900', 'text-white');
+            }
+            applyCatalogueFilters();
+        }
+
+        function applyCatalogueFilters() {
+            const desktopQuery = (document.getElementById('desktop-search')?.value || '').toLowerCase();
+            const mobileQuery = (document.getElementById('mobile-search')?.value || '').toLowerCase();
+            const query = desktopQuery || mobileQuery;
+            const sortOrder = document.getElementById('sort-order').value;
+
+            let filtered = [...articles];
+            if (activeCategory !== 'Tout') filtered = filtered.filter(item => item.category === activeCategory);
+            if (query.trim() !== '') {
+                filtered = filtered.filter(item =>
+                    item.title.toLowerCase().includes(query) ||
+                    item.description.toLowerCase().includes(query) ||
+                    item.seller.toLowerCase().includes(query)
+                );
+            }
+
+            if (sortOrder === 'price-asc') filtered.sort((a, b) => a.price - b.price);
+            else if (sortOrder === 'price-desc') filtered.sort((a, b) => b.price - a.price);
+            else if (sortOrder === 'sponsored') filtered.sort((a, b) => (b.sponsored === a.sponsored) ? 0 : b.sponsored ? 1 : -1);
+            else if (sortOrder === 'newest') filtered.sort((a, b) => b.id - a.id);
+
+            renderCatalogueGrid(filtered);
+        }
+
+        function renderCatalogueGrid(list) {
+            const grid = document.getElementById('catalogue-grid');
+            document.getElementById('catalogue-count').innerText = list.length;
+
+            if (list.length === 0) {
+                grid.innerHTML = `<div class="col-span-full bg-white border border-stone-200 rounded-xl py-14 text-center text-sm text-stone-500">Aucun article ne correspond à votre sélection actuelle.</div>`;
+                return;
+            }
+
+            grid.innerHTML = list.map(item => `
+                <article class="bg-white border border-stone-200 rounded-xl overflow-hidden flex flex-col justify-between hover:border-stone-400 transition-colors group">
+                    <div>
+                        <div class="relative aspect-[4/5] bg-stone-100 overflow-hidden">
+                            <img src="${item.image}" alt="${item.title}" class="w-full h-full object-cover group-hover:scale-103 transition-transform duration-300" onerror="this.src='https://placehold.co/400x500/F3F1EC/292724?text=Second+Life'">
+                            <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                                <span class="bg-white/95 border border-stone-200 text-stone-900 text-[11px] font-semibold px-2.5 py-0.5 rounded">${item.category}</span>
+                                ${item.sponsored ? `<span class="bg-stone-900 text-white text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded">Sponsorisé</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="p-4 space-y-1.5">
+                            <div class="flex items-center justify-between text-[11px] text-stone-500">
+                                <span>Vendeur : <strong class="font-medium text-stone-700">${item.seller}</strong></span>
+                                <span>Com. 10% incluse</span>
+                            </div>
+                            <h3 class="font-semibold text-stone-900 text-sm line-clamp-1">${item.title}</h3>
+                            <p class="text-xs text-stone-500 line-clamp-2 leading-relaxed">${item.description}</p>
+                        </div>
+                    </div>
+                    <div class="px-4 pb-4 pt-2 border-t border-stone-100 flex items-center justify-between gap-2">
+                        <span class="text-base font-bold text-stone-900">${Number(item.price).toFixed(2)} DT</span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="contactSellerFromCard('${item.seller}', '${item.title.replace(/'/g, "\\'")}')" class="p-2 rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-100 text-xs cursor-pointer" title="Contacter le vendeur">
+                                <i class="fa-regular fa-envelope"></i>
+                            </button>
+                            <button onclick="addItemToPanier(${item.id})" class="px-3 py-2 rounded-lg bg-stone-900 hover:bg-forest-700 text-white text-xs font-medium transition-colors cursor-pointer">
+                                Ajouter au panier
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        function updateLiveCommissionCalc() {
+            const rawPrice = parseFloat(document.getElementById('sell-price').value) || 0;
+            const commission = rawPrice * 0.10;
+            const netSeller = rawPrice - commission;
+            document.getElementById('calc-gross').innerText = rawPrice.toFixed(2) + ' DT';
+            document.getElementById('calc-fee').innerText = '- ' + commission.toFixed(2) + ' DT';
+            document.getElementById('calc-net').innerText = netSeller.toFixed(2) + ' DT';
+        }
+
+        function handleItemPhotoSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                uploadedItemPhotoData = e.target.result;
+                document.getElementById('sell-photo-preview').src = uploadedItemPhotoData;
+                document.getElementById('sell-photo-preview-box').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function handlePublishItem(event) {
+            event.preventDefault();
+            const title = document.getElementById('sell-title').value.trim();
+            const category = document.getElementById('sell-category').value;
+            const price = parseFloat(document.getElementById('sell-price').value);
+            const description = document.getElementById('sell-desc').value.trim() || "Article de seconde main en très bon état.";
+            const sponsored = document.getElementById('sell-sponsored').checked;
+
+            const savedUser = JSON.parse(localStorage.getItem(StorageKeys.USER));
+            const sellerName = savedUser ? savedUser.name : "Vendeur Particulier";
+
+            const newArticle = {
+                id: Date.now(),
+                title,
+                category,
+                price,
+                seller: sellerName,
+                sponsored,
+                description,
+                image: uploadedItemPhotoData || "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600&auto=format&fit=crop&q=80"
+            };
+
+            articles.unshift(newArticle);
+            saveArticlesState();
+
+            const client = initSupabaseClient();
+            if (client) {
+                const { error } = await client.from("articles").insert([newArticle]);
+                if (error) console.error("Supabase insert error:", error);
+            }
+
+            pushNotification(`Nouvel article publié : "${title}" (${price.toFixed(2)} DT).`);
+            document.getElementById('sell-form').reset();
+            uploadedItemPhotoData = null;
+            document.getElementById('sell-photo-preview-box').classList.add('hidden');
+            updateLiveCommissionCalc();
+            closeModal('sell-modal');
+            applyCatalogueFilters();
+            renderAdminPanel();
+            showToast('Votre annonce est maintenant en ligne !');
+        }
+
+        function saveArticlesState() {
+            localStorage.setItem(StorageKeys.ARTICLES, JSON.stringify(articles));
+        }
+
+        function addItemToPanier(articleId) {
+            const found = articles.find(a => a.id === articleId);
+            if (!found) return;
+            cart.push(found);
+            localStorage.setItem(StorageKeys.CART, JSON.stringify(cart));
+            updatePanierUI();
+            showToast(`"${found.title}" ajouté au panier.`);
+        }
+
+        function removeItemFromPanier(index) {
+            cart.splice(index, 1);
+            localStorage.setItem(StorageKeys.CART, JSON.stringify(cart));
+            updatePanierUI();
+        }
+
+        function updatePanierUI() {
+            document.getElementById('panier-badge').innerText = cart.length;
+            const listContainer = document.getElementById('panier-items-list');
+            const footer = document.getElementById('panier-footer');
+
+            if (cart.length === 0) {
+                listContainer.innerHTML = `<p class="text-center text-sm text-stone-500 py-12">Votre panier est vide.</p>`;
+                footer.classList.add('hidden');
+                return;
+            }
+
+            footer.classList.remove('hidden');
+            listContainer.innerHTML = cart.map((item, idx) => `
+                <div class="py-4 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <img src="${item.image}" alt="${item.title}" class="w-14 h-16 rounded-lg object-cover border border-stone-200" onerror="this.src='https://placehold.co/100x120'">
+                        <div>
+                            <h4 class="text-xs font-semibold text-stone-900">${item.title}</h4>
+                            <span class="text-[11px] text-stone-500 block">Vendeur : ${item.seller}</span>
+                            <span class="text-xs font-bold text-stone-900 mt-1 block">${Number(item.price).toFixed(2)} DT</span>
+                        </div>
+                    </div>
+                    <button onclick="removeItemFromPanier(${idx})" class="text-stone-400 hover:text-red-600 p-1.5 text-xs cursor-pointer" title="Retirer">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `).join('');
+
+            const subtotal = cart.reduce((acc, item) => acc + Number(item.price), 0);
+            const shipping = 7.0;
+            document.getElementById('panier-subtotal').innerText = subtotal.toFixed(2) + ' DT';
+            document.getElementById('panier-total').innerText = (subtotal + shipping).toFixed(2) + ' DT';
+        }
+
+        function confirmPanierOrder() {
+            const total = document.getElementById('panier-total').innerText;
+            pushNotification(`Commande confirmée (${total}). Le vendeur a été notifié.`);
+            cart = [];
+            localStorage.setItem(StorageKeys.CART, JSON.stringify(cart));
+            updatePanierUI();
+            closeDrawer('panier-drawer');
+            showToast('Commande validée avec succès !');
+        }
+
+        function contactSellerFromCard(sellerName, articleTitle) {
+            openDrawer('messagerie-drawer');
+            switchChatContact(sellerName, articleTitle);
+            const feed = document.getElementById('drawer-chat-feed');
+            feed.innerHTML += `<div class="flex justify-end"><div class="bg-stone-900 text-white px-3.5 py-2.5 rounded-xl max-w-xs">Bonjour ${sellerName}, je suis intéressé(e) par votre article « ${articleTitle} ». Est-il toujours disponible ?</div></div>`;
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function switchChatContact(name, topic) {
+            document.getElementById('chat-active-contact').innerText = `Discussion avec ${name} • ${topic}`;
+        }
+
+        function handleSendDirectMessage(event) {
+            event.preventDefault();
+            const input = document.getElementById('drawer-chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+            const feed = document.getElementById('drawer-chat-feed');
+            feed.innerHTML += `<div class="flex justify-end"><div class="bg-stone-900 text-white px-3.5 py-2.5 rounded-xl max-w-xs">${text}</div></div>`;
+            input.value = '';
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function toggleNotifications() { document.getElementById('notif-dropdown').classList.toggle('hidden'); }
+
+        function pushNotification(text) {
+            notifications.unshift({ id: Date.now(), text, time: "À l'instant", unread: true });
+            localStorage.setItem(StorageKeys.NOTIFS, JSON.stringify(notifications));
+            renderNotifications();
+        }
+
+        function renderNotifications() {
+            const unreadCount = notifications.filter(n => n.unread).length;
+            const badge = document.getElementById('notif-badge');
+            badge.innerText = unreadCount;
+            badge.classList.toggle('hidden', unreadCount === 0);
+            document.getElementById('notif-list').innerHTML = notifications.map(n => `
+                <div class="px-4 py-3 ${n.unread ? 'bg-stone-50/90' : 'bg-white'}">
+                    <p class="text-stone-800 leading-snug">${n.text}</p>
+                    <span class="text-[10px] text-stone-400 mt-1 block">${n.time}</span>
+                </div>
+            `).join('');
+        }
+
+        function markAllNotificationsRead() {
+            notifications = notifications.map(n => ({ ...n, unread: false }));
+            localStorage.setItem(StorageKeys.NOTIFS, JSON.stringify(notifications));
+            renderNotifications();
+        }
+
+        function askAssistantPreset(promptText) {
+            document.getElementById('assistant-input').value = promptText;
+            handleAssistantSubmit(new Event('submit'));
+        }
+
+        function handleAssistantSubmit(event) {
+            event.preventDefault();
+            const input = document.getElementById('assistant-input');
+            const query = input.value.trim();
+            if (!query) return;
+            const box = document.getElementById('assistant-messages');
+            box.innerHTML += `<div class="flex justify-end"><div class="bg-stone-900 text-white rounded-xl p-3.5 max-w-md leading-relaxed">${query}</div></div>`;
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+
+            setTimeout(() => {
+                let response = "Pour un article de seconde main en bon état sur Second Life, nous recommandons un prix compris entre 35% et 50% de sa valeur neuve, en tenant compte de la commission de 10%.";
+                const qLower = query.toLowerCase();
+                if (qLower.includes('levi') || qLower.includes('veste')) response = "Estimation conseillée : entre 55 DT et 85 DT selon l'état du denim. Avec une commission de 10% sur 60 DT, vous percevrez 54 DT net.";
+                else if (qLower.includes('description') || qLower.includes('robe')) response = "Suggestion de description : « Robe d'été fluide en très bon état, portée deux fois. Coupe confortable, finitions soignées. Envoi rapide ou remise en main propre possible. »";
+                else if (qLower.includes('commission') || qLower.includes('10%')) response = "La commission Second Life est de 10% sur chaque vente réussie. Exemple : vous affichez un article à 30 DT → commission de 3 DT → vous recevez 27 DT net.";
+                box.innerHTML += `<div class="flex gap-3"><div class="w-8 h-8 rounded-lg bg-stone-900 text-white flex items-center justify-center text-xs font-semibold shrink-0">SL</div><div class="bg-stone-100 border border-stone-200 rounded-xl p-3.5 text-stone-800 max-w-lg leading-relaxed">${response}</div></div>`;
+                box.scrollTop = box.scrollHeight;
+            }, 400);
+        }
+
+        function selectAccountRole(role) {
+            selectedRole = role;
+            const clientBtn = document.getElementById('role-btn-client');
+            const adminBtn = document.getElementById('role-btn-admin');
+            const pinWrapper = document.getElementById('acc-admin-pin-wrapper');
+            if (role === 'admin') {
+                adminBtn.classList.add('bg-white', 'text-stone-900', 'shadow-2xs');
+                clientBtn.classList.remove('bg-white', 'text-stone-900', 'shadow-2xs');
+                pinWrapper.classList.remove('hidden');
+            } else {
+                clientBtn.classList.add('bg-white', 'text-stone-900', 'shadow-2xs');
+                adminBtn.classList.remove('bg-white', 'text-stone-900', 'shadow-2xs');
+                pinWrapper.classList.add('hidden');
+            }
+        }
+
+        function handleAccountLogin(event) {
+            event.preventDefault();
+            const name = document.getElementById('acc-name').value.trim();
+            const email = document.getElementById('acc-email').value.trim();
+            if (selectedRole === 'admin') {
+                if (document.getElementById('acc-admin-pin').value !== '1234') {
+                    showToast('Code PIN administrateur incorrect (Démo : 1234).');
+                    return;
+                }
+                isAdminUnlocked = true;
+            }
+            localStorage.setItem(StorageKeys.USER, JSON.stringify({ name, email, role: selectedRole }));
+            document.getElementById('header-user-label').innerText = name.split(' ')[0];
+            closeModal('account-modal');
+            showToast(`Bienvenue, ${name} !`);
+            if (selectedRole === 'admin') navigate('admin');
+        }
+
+        function loadSavedUser() {
+            const saved = JSON.parse(localStorage.getItem(StorageKeys.USER));
+            if (saved) document.getElementById('header-user-label').innerText = saved.name.split(' ')[0];
+        }
+
+        function activatePremiumAccount() {
+            pushNotification("Votre demande d'activation Second Life Premium (0% commission) a été enregistrée.");
+            showToast('Demande Premium enregistrée !');
+        }
+
+        function unlockAdminPanel() {
+            if (document.getElementById('admin-pin-input').value === '1234') {
+                isAdminUnlocked = true;
+                renderAdminPanel();
+                showToast('Accès Administration déverrouillé.');
+            } else {
+                showToast('Code PIN incorrect. Utilisez 1234.');
+            }
+        }
+
+        function lockAdminPanel() {
+            isAdminUnlocked = false;
+            document.getElementById('admin-pin-input').value = '';
+            renderAdminPanel();
+        }
+
+        function renderAdminPanel() {
+            const lockScreen = document.getElementById('admin-lock-screen');
+            const dashboard = document.getElementById('admin-dashboard-content');
+            if (!isAdminUnlocked) {
+                lockScreen.classList.remove('hidden');
+                dashboard.classList.add('hidden');
+                return;
+            }
+            lockScreen.classList.add('hidden');
+            dashboard.classList.remove('hidden');
+
+            const totalVolume = articles.reduce((sum, item) => sum + Number(item.price), 0);
+            document.getElementById('kpi-total-volume').innerText = totalVolume.toFixed(2) + ' DT';
+            document.getElementById('kpi-total-commissions').innerText = (totalVolume * 0.10).toFixed(2) + ' DT';
+            document.getElementById('kpi-active-items').innerText = articles.length;
+
+            document.getElementById('admin-control-tbody').innerHTML = articles.map(item => {
+                const com = Number(item.price) * 0.10;
+                return `
+                    <tr class="hover:bg-stone-50">
+                        <td class="py-3 px-4 flex items-center gap-2.5">
+                            <img src="${item.image}" class="w-9 h-9 rounded object-cover border border-stone-200" onerror="this.src='https://placehold.co/80x80'">
+                            <span class="font-medium text-stone-900">${item.title}</span>
+                        </td>
+                        <td class="py-3 px-4 text-stone-600">${item.category}</td>
+                        <td class="py-3 px-4 text-stone-600">${item.seller}</td>
+                        <td class="py-3 px-4 font-semibold text-stone-900">${Number(item.price).toFixed(2)} DT</td>
+                        <td class="py-3 px-4 font-semibold text-forest-700">+${com.toFixed(2)} DT</td>
+                        <td class="py-3 px-4">
+                            <button onclick="toggleItemSponsorAdmin(${item.id})" class="px-2.5 py-1 rounded text-[11px] font-medium border cursor-pointer ${item.sponsored ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-stone-300'}">
+                                ${item.sponsored ? 'Sponsorisé' : 'Standard'}
+                            </button>
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="deleteArticleAdmin(${item.id})" class="text-red-600 hover:text-red-800 px-2 py-1 text-xs font-medium cursor-pointer" title="Supprimer l'article">Supprimer</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function toggleItemSponsorAdmin(id) {
+            const target = articles.find(a => a.id === id);
+            const nextVal = target ? !target.sponsored : false;
+            articles = articles.map(a => a.id === id ? { ...a, sponsored: nextVal } : a);
+            saveArticlesState();
+
+            const client = initSupabaseClient();
+            if (client) {
+                const { error } = await client.from("articles").update({ sponsored: nextVal }).eq("id", id);
+                if (error) console.error("Supabase update error:", error);
+            }
+
+            renderAdminPanel();
+            applyCatalogueFilters();
+            showToast('Statut Sponsoring mis à jour.');
+        }
+
+        async function deleteArticleAdmin(id) {
+            articles = articles.filter(a => a.id !== id);
+            saveArticlesState();
+
+            const client = initSupabaseClient();
+            if (client) {
+                const { error } = await client.from("articles").delete().eq("id", id);
+                if (error) console.error("Supabase delete error:", error);
+            }
+
+            renderAdminPanel();
+            applyCatalogueFilters();
+            showToast('Annonce supprimée.');
+        }
+
+        function resetAllDemoData() {
+            articles = [...initialSeedArticles];
+            saveArticlesState();
+            renderAdminPanel();
+            applyCatalogueFilters();
+            showToast('Catalogue réinitialisé.');
+        }
+
+        async function saveSupabaseConfig() {
+            const url = document.getElementById('supabase-url-input').value.trim();
+            const key = document.getElementById('supabase-key-input').value.trim();
+            if (!url || !key) {
+                showToast('Veuillez remplir SUPABASE_URL et SUPABASE_ANON_KEY.');
+                return;
+            }
+            localStorage.setItem(StorageKeys.SUPABASE_CFG, JSON.stringify({ url, key }));
+            updateSupabaseStatusIndicator(true);
+            await loadArticlesFromSupabase();
+            showToast('Configuration Supabase enregistrée et synchronisée !');
+        }
+
+        function clearSupabaseConfig() {
+            localStorage.removeItem(StorageKeys.SUPABASE_CFG);
+            document.getElementById('supabase-url-input').value = '';
+            document.getElementById('supabase-key-input').value = '';
+            sbClient = null;
+            updateSupabaseStatusIndicator(false);
+            showToast('Configuration Supabase déconnectée.');
+        }
+
+        function loadSavedSupabaseConfig() {
+            const cfg = JSON.parse(localStorage.getItem(StorageKeys.SUPABASE_CFG));
+            if (cfg && cfg.url && cfg.key) {
+                document.getElementById('supabase-url-input').value = cfg.url;
+                document.getElementById('supabase-key-input').value = cfg.key;
+                updateSupabaseStatusIndicator(true);
+            }
+        }
+
+        function updateSupabaseStatusIndicator(connected) {
+            const dot = document.getElementById('supabase-status-dot');
+            const label = document.getElementById('supabase-status-label');
+            const badge = document.getElementById('db-badge-status');
+            if (connected) {
+                dot.classList.remove('bg-amber-400');
+                dot.classList.add('bg-emerald-400');
+                label.innerText = 'Supabase Configuré';
+                if (badge) {
+                    badge.innerText = 'Supabase Prêt (Connecté)';
+                    badge.className = 'text-xs font-medium px-2.5 py-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 self-start';
+                }
+            } else {
+                dot.classList.remove('bg-emerald-400');
+                dot.classList.add('bg-amber-400');
+                label.innerText = 'Mode Local (Supabase prêt)';
+                if (badge) {
+                    badge.innerText = 'Stockage Local Actif';
+                    badge.className = 'text-xs font-medium px-2.5 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200 self-start';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
